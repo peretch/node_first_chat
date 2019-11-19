@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Web Client</title>
+    <style>
+        div[data-controls] {
+            position: fixed;
+        }
+
+        div[data-messages] {
+            padding-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div data-controls>
+        <form data-username-input onsubmit="setUsername(this.elements['usr'], event)">
+            <label for="usr">Enter a username: </label>
+            <input name="usr" type="text" placeholder="Type a username"/>
+        </form>
+        <form data-message-input style="display: none;" onsubmit="sendMessage(this.elements['msg'], event)">
+            <label for="msg">Send message: </label>
+            <input name="msg" type="text" placeholder="Type a message"/>
+        </form>
+    </div>
+    <div data-messages></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let username = '';
+        const client = io();
+        const messageContainer = document.querySelector("div[data-messages]");
+
+        client.on('message', (payload) => {
+            addMessage(messageContainer, payload);
+        });
+
+        const addMessage = (container, content) => {
+            const message = document.createElement('p');
+            message.innerText = content;
+            container.appendChild(message);
+        };
+
+        const setUsername = (input, event) => {
+            event.preventDefault();
+            username = input.value;
+            client.emit('username', username);
+            input.value = '';
+            document.querySelector("form[data-username-input]").style.display = 'none';
+            document.querySelector("form[data-message-input]").style.display = 'block';
+        };
+
+        const sendMessage = (input, event) => {
+            event.preventDefault();
+            client.emit('message', input.value);
+            addMessage(messageContainer, `[${username}]: ${input.value}`);
+            input.value = '';
+        };
+    </script>
+</body>
+</html>
